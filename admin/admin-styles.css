@@ -1,0 +1,137 @@
+/* Admin-specific styles */
+.admin-body {
+    background: linear-gradient(135deg, #2c3e50, #4a6491);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.admin-container {
+    width: 100%;
+    max-width: 400px;
+}
+
+.admin-login-card {
+    background: white;
+    border-radius: 15px;
+    padding: 2.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.admin-logo {
+    margin-bottom: 2rem;
+}
+
+.admin-logo i {
+    font-size: 3rem;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+}
+
+.admin-logo h1 {
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+
+.admin-logo h2 {
+    color: var(--gray);
+    font-size: 1.2rem;
+    font-weight: 400;
+}
+
+.btn-admin {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    width: 100%;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-admin:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, var(--secondary), var(--primary));
+}
+
+.admin-login-error {
+    background: var(--danger);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.admin-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.back-to-client {
+    color: var(--gray);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s;
+}
+
+.back-to-client:hover {
+    color: var(--secondary);
+}
+
+/* Admin Dashboard Styles */
+.admin-header {
+    background: linear-gradient(135deg, var(--primary), #34495e);
+    color: white;
+    padding: 1rem 0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.admin-dashboard {
+    margin-top: 2rem;
+}
+
+.admin-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.admin-welcome {
+    color: white;
+    font-weight: 500;
+}
+
+.btn-logout {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-logout:hover {
+    background: #c0392b;
+}
+
+/* Responsive Admin */
+@media (max-width: 768px) {
+    .admin-nav {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+    
+    .admin-nav .btn {
+        width: 100%;
+    }
+    
+    .admin-welcome {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+}
