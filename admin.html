@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WMSU Research - Admin Panel</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-users-cog"></i>
+                    <h1>WMSU Research - Admin Panel</h1>
+                </div>
+                <div class="admin-nav">
+                    <a href="index.html" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Client Portal
+                    </a>
+                    <button class="btn btn-secondary" id="exportDataBtn">
+                        <i class="fas fa-download"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="admin-container">
+            <!-- Quick Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: var(--secondary);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="totalClients">0</div>
+                        <div class="stat-label">Total Clients</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: var(--success);">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="activeClients">0</div>
+                        <div class="stat-label">Active Clients</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: var(--warning);">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="totalFiles">0</div>
+                        <div class="stat-label">Total Files</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: var(--danger);">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="totalStorage">0</div>
+                        <div class="stat-label">GB Storage Used</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Account Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Create New Client Account</h3>
+                    <i class="fas fa-user-plus" style="color: var(--success);"></i>
+                </div>
+                <form id="createAccountForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="clientName">Client Name *</label>
+                            <input type="text" id="clientName" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="clientEmail">Email *</label>
+                            <input type="email" id="clientEmail" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="username">Username *</label>
+                            <input type="text" id="username" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Password *</label>
+                            <input type="password" id="password" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="subdomain">Subdomain *</label>
+                            <div class="input-group">
+                                <input type="text" id="subdomain" class="form-control" required>
+                                <span class="input-suffix">.wmsu-research.com</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="plan">Plan</label>
+                            <select id="plan" class="form-control">
+                                <option value="basic">Basic</option>
+                                <option value="standard" selected>Standard</option>
+                                <option value="premium">Premium</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="storageLimit">Storage Limit (MB)</label>
+                        <input type="number" id="storageLimit" class="form-control" value="1000" min="100" max="10000">
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Create Account
+                    </button>
+                </form>
+            </div>
+
+            <!-- Clients Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Client Accounts</h3>
+                    <div class="search-box">
+                        <input type="text" id="searchClients" class="form-control" placeholder="Search clients...">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Client Name</th>
+                                <th>Username</th>
+                                <th>Subdomain</th>
+                                <th>Plan</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTable">
+                            <!-- Clients will be dynamically added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Client Modal -->
+    <div class="modal" id="editClientModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Client Account</h3>
+                <button class="btn-icon close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editClientForm">
+                    <input type="hidden" id="editClientId">
+                    <div class="form-group">
+                        <label for="editClientName">Client Name</label>
+                        <input type="text" id="editClientName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editClientEmail">Email</label>
+                        <input type="email" id="editClientEmail" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editPassword">New Password (leave blank to keep current)</label>
+                        <input type="password" id="editPassword" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="editPlan">Plan</label>
+                        <select id="editPlan" class="form-control">
+                            <option value="basic">Basic</option>
+                            <option value="standard">Standard</option>
+                            <option value="premium">Premium</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editStorageLimit">Storage Limit (MB)</label>
+                        <input type="number" id="editStorageLimit" class="form-control" min="100" max="10000">
+                    </div>
+                    <div class="form-group">
+                        <label for="editStatus">Status</label>
+                        <select id="editStatus" class="form-control">
+                            <option value="active">Active</option>
+                            <option value="suspended">Suspended</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary close-modal">Cancel</button>
+                <button class="btn btn-danger" id="deleteClientBtn">Delete Account</button>
+                <button class="btn btn-success" id="saveClientBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

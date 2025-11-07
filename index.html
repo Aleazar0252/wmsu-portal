@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WMSU Research - Client Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h1>WMSU Research - Client Portal</h1>
+                </div>
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <div class="avatar" id="userAvatar">JD</div>
+                    <span id="userName">John Doe</span>
+                    <button class="btn-icon" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+                <div class="admin-link">
+                    <a href="admin.html" class="btn btn-outline">
+                        <i class="fas fa-cog"></i> Admin Panel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- Login Form -->
+        <div class="login-container" id="loginContainer">
+            <h2>Client Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-control" placeholder="Enter your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+            <div style="margin-top: 1rem; text-align: center; color: var(--danger); display: none;" id="loginError">
+                Invalid username or password. Please try again.
+            </div>
+        </div>
+        
+        <!-- Dashboard -->
+        <div class="dashboard" id="dashboard">
+            <div class="welcome-banner">
+                <h2>Welcome, <span id="welcomeName">John Doe</span>!</h2>
+                <p>Your subdomain: <strong id="subdomain">client.wmsu-research.com</strong></p>
+                <div class="account-status" id="accountStatus"></div>
+            </div>
+            
+            <div class="dashboard-grid">
+                <!-- File Upload Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">File Upload</h3>
+                        <i class="fas fa-cloud-upload-alt" style="color: var(--secondary);"></i>
+                    </div>
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & drop files here or click to browse</p>
+                        <input type="file" id="fileInput" multiple style="display: none;">
+                    </div>
+                    <div class="file-list" id="fileList">
+                        <!-- Files will be dynamically added here -->
+                    </div>
+                </div>
+                
+                <!-- Database Management Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Database Management</h3>
+                        <i class="fas fa-database" style="color: var(--secondary);"></i>
+                    </div>
+                    <div class="database-info">
+                        <div class="info-item">
+                            <span class="info-label">Database Name</span>
+                            <span class="info-value" id="dbName">client_db</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Database Size</span>
+                            <span class="info-value" id="dbSize">45.2 MB / 100 MB</span>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: 45.2%;"></div>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tables</span>
+                            <span class="info-value" id="tableCount">12</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Backup</span>
+                            <span class="info-value" id="lastBackup">2023-06-18</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem; display: flex; gap: 10px;">
+                        <button class="btn" style="flex: 1;" id="backupBtn">
+                            <i class="fas fa-download"></i> Backup Database
+                        </button>
+                        <button class="btn" style="flex: 1; background: var(--success);" id="importBtn">
+                            <i class="fas fa-upload"></i> Import SQL
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Account Info Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Account Information</h3>
+                        <i class="fas fa-user-circle" style="color: var(--secondary);"></i>
+                    </div>
+                    <div class="database-info">
+                        <div class="info-item">
+                            <span class="info-label">Client Name</span>
+                            <span class="info-value" id="clientName">John Doe</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Email</span>
+                            <span class="info-value" id="clientEmail">john.doe@example.com</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Account Created</span>
+                            <span class="info-value" id="accountCreated">2023-05-15</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Plan</span>
+                            <span class="info-value" id="clientPlan">Standard</span>
+                        </div>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-value" id="fileCount">0</div>
+                            <div class="stat-label">Files</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="storageUsed">0</div>
+                            <div class="stat-label">MB Used</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="dbTables">12</div>
+                            <div class="stat-label">DB Tables</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="container">
+            <p>WMSU Research Client Portal &copy; 2023. All rights reserved.</p>
+            <p>Need help? Contact support@wmsu-research.com</p>
+        </div>
+    </footer>
+
+    <script src="data.js"></script>
+    <script src="client.js"></script>
+</body>
+</html>
