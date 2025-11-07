@@ -1,6 +1,6 @@
 <?php
 class Database {
-    private $host = "localhost";
+    private $host = "srv1981.hstgr.io";
     private $db_name = "u926749960_portal_db"; 
     private $username = "u926749960_wmsuportal"; 
     private $password = "Wmsuportal_2025"; 
