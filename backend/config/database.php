@@ -2,8 +2,8 @@
 class Database {
     private $host = "localhost";
     private $db_name = "u926749960_portal_db"; 
-    private $username = "u926749960_portal_db"; 
-    private $password = "WMSU_Portal2025"; 
+    private $username = "u926749960_wmsuportal"; 
+    private $password = "Wmsuportal_2025"; 
     public $conn;
 
     public function getConnection() {
