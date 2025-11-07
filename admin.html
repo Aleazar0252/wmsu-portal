@@ -22,11 +22,11 @@
             <form id="adminLoginForm">
                 <div class="form-group">
                     <label for="adminUsername">Username</label>
-                    <input type="text" id="adminUsername" class="form-control" placeholder="Enter your username" required>
+                    <input type="text" id="adminUsername" class="form-control" placeholder="Enter your username" required value="admin">
                 </div>
                 <div class="form-group">
                     <label for="adminPassword">Password</label>
-                    <input type="password" id="adminPassword" class="form-control" placeholder="Enter your password" required>
+                    <input type="password" id="adminPassword" class="form-control" placeholder="Enter your password" required value="admin123">
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
                     <i class="fas fa-sign-in-alt"></i> Sign In
@@ -241,7 +241,239 @@
         </div>
     </div>
 
-    <script src="data.js"></script>
-    <script src="admin.js"></script>
+    <script>
+        // Simple admin login system
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded - initializing admin system');
+            
+            // Check if already logged in
+            const adminUser = localStorage.getItem('adminUser');
+            if (adminUser) {
+                showDashboard();
+                return;
+            }
+
+            // Setup login form
+            const loginForm = document.getElementById('adminLoginForm');
+            if (loginForm) {
+                console.log('Login form found');
+                loginForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    console.log('Login form submitted');
+                    
+                    const username = document.getElementById('adminUsername').value;
+                    const password = document.getElementById('adminPassword').value;
+                    const errorDiv = document.getElementById('adminLoginError');
+                    
+                    console.log('Username:', username, 'Password:', password);
+                    
+                    // Simple validation
+                    if (username === 'admin' && password === 'admin123') {
+                        console.log('Login successful');
+                        localStorage.setItem('adminUser', JSON.stringify({
+                            id: 'admin',
+                            name: 'System Administrator',
+                            username: 'admin',
+                            role: 'admin'
+                        }));
+                        showDashboard();
+                    } else {
+                        console.log('Login failed');
+                        errorDiv.style.display = 'block';
+                    }
+                });
+            } else {
+                console.log('Login form NOT found');
+            }
+
+            // Setup logout button
+            const logoutBtn = document.getElementById('adminLogoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    localStorage.removeItem('adminUser');
+                    showLogin();
+                });
+            }
+
+            function showLogin() {
+                console.log('Showing login page');
+                document.getElementById('adminLoginPage').style.display = 'flex';
+                document.getElementById('adminDashboard').style.display = 'none';
+            }
+
+            function showDashboard() {
+                console.log('Showing dashboard');
+                document.getElementById('adminLoginPage').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+                
+                // Initialize dashboard
+                initializeDashboard();
+            }
+
+            function initializeDashboard() {
+                console.log('Initializing dashboard');
+                
+                // Set admin name
+                const adminName = document.getElementById('adminName');
+                if (adminName) {
+                    adminName.textContent = 'System Administrator';
+                }
+                
+                // Load clients
+                loadClients();
+                
+                // Update stats
+                updateStats();
+                
+                // Setup create account form
+                const createForm = document.getElementById('createAccountForm');
+                if (createForm) {
+                    createForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        createClientAccount();
+                    });
+                }
+                
+                // Setup search
+                const searchInput = document.getElementById('searchClients');
+                if (searchInput) {
+                    searchInput.addEventListener('input', function(e) {
+                        filterClients(e.target.value);
+                    });
+                }
+                
+                // Setup export button
+                const exportBtn = document.getElementById('exportDataBtn');
+                if (exportBtn) {
+                    exportBtn.addEventListener('click', exportData);
+                }
+                
+                // Setup modal events
+                setupModalEvents();
+            }
+
+            function loadClients() {
+                console.log('Loading clients');
+                const clientsTable = document.getElementById('clientsTable');
+                if (!clientsTable) {
+                    console.log('Clients table not found');
+                    return;
+                }
+                
+                // For now, use sample data
+                const clients = [
+                    {
+                        id: 1,
+                        name: 'Sample Client',
+                        username: 'sampleuser',
+                        subdomain: 'sample',
+                        plan: 'standard',
+                        status: 'active',
+                        accountCreated: '2024-01-01'
+                    }
+                ];
+                
+                displayClients(clients);
+            }
+
+            function displayClients(clients) {
+                const clientsTable = document.getElementById('clientsTable');
+                clientsTable.innerHTML = '';
+                
+                clients.forEach(client => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${client.name}</td>
+                        <td>${client.username}</td>
+                        <td>${client.subdomain}.wmsu-research.com</td>
+                        <td><span class="badge badge-${client.plan}">${client.plan}</span></td>
+                        <td><span class="status status-${client.status}">${client.status}</span></td>
+                        <td>${client.accountCreated}</td>
+                        <td>
+                            <button class="btn-icon btn-edit" onclick="editClient(${client.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon btn-delete" onclick="deleteClient(${client.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    clientsTable.appendChild(row);
+                });
+            }
+
+            function updateStats() {
+                console.log('Updating stats');
+                // Sample stats for now
+                document.getElementById('totalClients').textContent = '1';
+                document.getElementById('activeClients').textContent = '1';
+                document.getElementById('totalFiles').textContent = '0';
+                document.getElementById('totalStorage').textContent = '0.00';
+            }
+
+            function createClientAccount() {
+                const clientName = document.getElementById('clientName').value;
+                const clientEmail = document.getElementById('clientEmail').value;
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const subdomain = document.getElementById('subdomain').value;
+                const plan = document.getElementById('plan').value;
+                const storageLimit = document.getElementById('storageLimit').value;
+                
+                alert(`Client account created:\nName: ${clientName}\nEmail: ${clientEmail}\nUsername: ${username}\nSubdomain: ${subdomain}\nPlan: ${plan}\nStorage: ${storageLimit}MB`);
+                
+                // Clear form
+                document.getElementById('createAccountForm').reset();
+                
+                // Reload clients
+                loadClients();
+                updateStats();
+            }
+
+            function filterClients(searchTerm) {
+                console.log('Filtering clients:', searchTerm);
+                // Implementation would go here
+            }
+
+            function exportData() {
+                alert('Exporting data...');
+                // Implementation would go here
+            }
+
+            function setupModalEvents() {
+                const modal = document.getElementById('editClientModal');
+                const closeButtons = document.querySelectorAll('.close-modal');
+                
+                closeButtons.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        modal.style.display = 'none';
+                    });
+                });
+                
+                window.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            }
+
+            // Global functions for button clicks
+            window.editClient = function(clientId) {
+                alert('Edit client: ' + clientId);
+                document.getElementById('editClientModal').style.display = 'block';
+            };
+
+            window.deleteClient = function(clientId) {
+                if (confirm('Are you sure you want to delete this client?')) {
+                    alert('Delete client: ' + clientId);
+                    loadClients();
+                    updateStats();
+                }
+            };
+
+            // Show login by default
+            showLogin();
+        });
+    </script>
 </body>
 </html>
