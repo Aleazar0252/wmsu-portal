@@ -1,23 +1,18 @@
-# Allow access to admin directory
+# Admin Directory Configuration
+Options +Indexes
+
+# Set index.html as the default file
+DirectoryIndex index.html
+
+# Allow access to all files in admin directory
 Require all granted
 
-# Allow PHP files to execute
+# Allow all file types
+<Files "*">
+    Require all granted
+</Files>
+
+# Security: Protect sensitive files (optional)
 <Files "*.php">
     Require all granted
 </Files>
-
-# Allow HTML files
-<Files "*.html">
-    Require all granted
-</Files>
-
-# Allow CSS and JS files
-<Files "*.css">
-    Require all granted
-</Files>
-<Files "*.js">
-    Require all granted
-</Files>
-
-# Enable directory browsing for admin (optional)
-Options +Indexes
