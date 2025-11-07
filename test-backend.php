@@ -1,58 +1,75 @@
 <?php
-echo "<h1>Backend System Test</h1>";
-echo "<style>
-    .success { color: green; font-weight: bold; }
-    .error { color: red; font-weight: bold; }
-    pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }
-</style>";
+// Test database connection and file permissions
+header('Content-Type: text/plain');
 
-// Test Database Connection
-echo "<h2>1. Database Connection</h2>";
-try {
-    include_once 'backend/config/database.php';
-    $database = new Database();
-    $db = $database->getConnection();
-    
-    if ($db) {
-        echo "<p class='success'>✅ Database connected successfully</p>";
-        
-        // Test tables
-        $tables = ['users', 'files', 'database_backups'];
-        foreach ($tables as $table) {
-            $stmt = $db->query("SHOW TABLES LIKE '$table'");
-            echo $stmt->rowCount() > 0 ? 
-                "<p class='success'>✅ Table '$table' exists</p>" : 
-                "<p class='error'>❌ Table '$table' missing</p>";
-        }
-    }
-} catch (Exception $e) {
-    echo "<p class='error'>❌ Database error: " . $e->getMessage() . "</p>";
-}
+echo "WMSU Research System - Connection Test\n";
+echo "=======================================\n\n";
 
-// Test API Endpoints
-echo "<h2>2. API Endpoints</h2>";
-$endpoints = [
-    '/backend/api/users.php' => 'Users API',
-    '/backend/api/auth.php' => 'Auth API', 
-    '/backend/api/files.php' => 'Files API',
-    '/backend/api/backups.php' => 'Backups API'
+// Test directory permissions
+$directories = [
+    'backend/data',
+    'backend/uploads',
+    'backend/backups'
 ];
 
-foreach ($endpoints as $endpoint => $name) {
-    $url = 'https://' . $_SERVER['HTTP_HOST'] . $endpoint;
-    $ch = curl_init($url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_NOBODY, true);
-    curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+foreach($directories as $dir) {
+    if(!file_exists($dir)) {
+        if(mkdir($dir, 0777, true)) {
+            echo "✓ Created directory: $dir\n";
+        } else {
+            echo "✗ Failed to create directory: $dir\n";
+        }
+    } else {
+        echo "✓ Directory exists: $dir\n";
+    }
     
-    echo ($http_code == 200 || $http_code == 405) ? 
-        "<p class='success'>✅ $name is accessible ($http_code)</p>" :
-        "<p class='error'>❌ $name failed ($http_code)</p>";
+    if(is_writable($dir)) {
+        echo "✓ Directory is writable: $dir\n";
+    } else {
+        echo "✗ Directory is not writable: $dir\n";
+    }
 }
 
-echo "<h2>3. Next Steps</h2>";
-echo "<p>If all tests pass, your backend is ready!</p>";
-echo "<p>Access your admin portal: <a href='/admin/'>Admin Portal</a></p>";
+// Test JSON files
+$files = [
+    'backend/data/users.json',
+    'backend/data/files.json'
+];
+
+foreach($files as $file) {
+    if(!file_exists($file)) {
+        file_put_contents($file, json_encode([]));
+        echo "✓ Created file: $file\n";
+    } else {
+        echo "✓ File exists: $file\n";
+    }
+    
+    if(is_writable($file)) {
+        echo "✓ File is writable: $file\n";
+    } else {
+        echo "✗ File is not writable: $file\n";
+    }
+}
+
+// Test PHP configuration
+echo "\nPHP Configuration:\n";
+echo "PHP Version: " . phpversion() . "\n";
+echo "Max File Upload: " . ini_get('upload_max_filesize') . "\n";
+echo "Max POST Size: " . ini_get('post_max_size') . "\n";
+echo "Memory Limit: " . ini_get('memory_limit') . "\n";
+
+// Test if required extensions are loaded
+$extensions = ['json', 'pdo', 'pdo_mysql'];
+foreach($extensions as $ext) {
+    if(extension_loaded($ext)) {
+        echo "✓ Extension loaded: $ext\n";
+    } else {
+        echo "✗ Extension not loaded: $ext\n";
+    }
+}
+
+echo "\nTest completed. System is " . (is_writable('backend/data') ? 'READY' : 'NOT READY') . " for use.\n";
+
+// Remove this file after testing for security
+// unlink(__FILE__);
 ?>

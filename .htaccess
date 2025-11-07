@@ -1,15 +1,18 @@
 RewriteEngine On
 
-# Allow API access
-RewriteRule ^backend/api/ - [L]
+# Redirect to HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Protect config files
-<Files "*.php">
-    Order Allow,Deny
-    Allow from all
-</Files>
+# API routing
+RewriteRule ^api/(.*)$ backend/api/$1 [L]
 
-<Files "database.php">
-    Order Deny,Allow
+# Protect sensitive directories
+<FilesMatch "\.(env|log|ini|conf)$">
     Deny from all
-</Files>
+</FilesMatch>
+
+# Protect uploads directory
+<FilesMatch "\.(sql|bak|tar|gz)$">
+    Deny from all
+</FilesMatch>

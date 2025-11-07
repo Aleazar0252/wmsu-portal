@@ -1,174 +1,76 @@
 <?php
-header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json; charset=UTF-8");
+header("Access-Control-Allow-Methods: POST, GET, PUT, DELETE");
+header("Access-Control-Max-Age: 3600");
+header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// Handle preflight OPTIONS request
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    http_response_code(200);
-    exit();
+$data = json_decode(file_get_contents("php://input"));
+
+// Initialize data files if they don't exist
+if(!file_exists('../../data')) {
+    mkdir('../../data', 0777, true);
 }
 
-include_once '../config/database.php';
-
-class UserAPI {
-    private $db;
-    private $table_name = "users";
-
-    public function __construct() {
-        $database = new Database();
-        $this->db = $database->getConnection();
-    }
-
-    // Get all clients (for admin)
-    public function getClients() {
-        $query = "SELECT id, username, name, email, subdomain, plan, 
-                         storage_limit_mb, storage_used_mb, status, 
-                         DATE_FORMAT(account_created, '%Y-%m-%d') as account_created, 
-                         last_login 
-                  FROM users WHERE role = 'client' ORDER BY account_created DESC";
-        
-        $stmt = $this->db->prepare($query);
-        $stmt->execute();
-        
-        $users = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $users[] = $row;
-        }
-        
-        return $users;
-    }
-
-    // Create new client
-    public function createClient($data) {
-        // Check if username or subdomain exists
-        $checkQuery = "SELECT id FROM users WHERE username = :username OR subdomain = :subdomain";
-        $checkStmt = $this->db->prepare($checkQuery);
-        $checkStmt->bindParam(":username", $data->username);
-        $checkStmt->bindParam(":subdomain", $data->subdomain);
-        $checkStmt->execute();
-        
-        if ($checkStmt->rowCount() > 0) {
-            return ["success" => false, "message" => "Username or subdomain already exists"];
-        }
-        
-        $query = "INSERT INTO users 
-                  (username, password, name, email, subdomain, plan, storage_limit_mb) 
-                  VALUES 
-                  (:username, :password, :name, :email, :subdomain, :plan, :storage_limit)";
-        
-        $stmt = $this->db->prepare($query);
-        $hashed_password = password_hash($data->password, PASSWORD_DEFAULT);
-        
-        $stmt->bindParam(":username", $data->username);
-        $stmt->bindParam(":password", $hashed_password);
-        $stmt->bindParam(":name", $data->name);
-        $stmt->bindParam(":email", $data->email);
-        $stmt->bindParam(":subdomain", $data->subdomain);
-        $stmt->bindParam(":plan", $data->plan);
-        $stmt->bindParam(":storage_limit", $data->storage_limit);
-        
-        if ($stmt->execute()) {
-            return ["success" => true, "message" => "Client created successfully"];
-        } else {
-            return ["success" => false, "message" => "Failed to create client"];
-        }
-    }
-
-    // Update client
-    public function updateClient($id, $data) {
-        $query = "UPDATE users SET 
-                  name = :name, 
-                  email = :email, 
-                  plan = :plan, 
-                  storage_limit_mb = :storage_limit,
-                  status = :status 
-                  WHERE id = :id";
-        
-        $stmt = $this->db->prepare($query);
-        
-        $stmt->bindParam(":name", $data->name);
-        $stmt->bindParam(":email", $data->email);
-        $stmt->bindParam(":plan", $data->plan);
-        $stmt->bindParam(":storage_limit", $data->storage_limit);
-        $stmt->bindParam(":status", $data->status);
-        $stmt->bindParam(":id", $id);
-        
-        if ($stmt->execute()) {
-            return ["success" => true, "message" => "Client updated successfully"];
-        } else {
-            return ["success" => false, "message" => "Failed to update client"];
-        }
-    }
-
-    // Delete client
-    public function deleteClient($id) {
-        // First delete client's files
-        $deleteFiles = "DELETE FROM files WHERE user_id = :user_id";
-        $stmt1 = $this->db->prepare($deleteFiles);
-        $stmt1->bindParam(":user_id", $id);
-        $stmt1->execute();
-        
-        // Then delete user
-        $query = "DELETE FROM users WHERE id = :id";
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(":id", $id);
-        
-        if ($stmt->execute()) {
-            return ["success" => true, "message" => "Client deleted successfully"];
-        } else {
-            return ["success" => false, "message" => "Failed to delete client"];
-        }
-    }
+if(!file_exists('../../data/users.json')) {
+    file_put_contents('../../data/users.json', json_encode([]));
 }
 
-// Handle requests
-$method = $_SERVER['REQUEST_METHOD'];
-$userAPI = new UserAPI();
-
-switch ($method) {
-    case 'GET':
-        $users = $userAPI->getClients();
-        echo json_encode(["success" => true, "users" => $users]);
-        break;
+if($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if(isset($data->action)) {
+        $users = json_decode(file_get_contents('../../data/users.json'), true);
         
-    case 'POST':
-        $data = json_decode(file_get_contents("php://input"));
-        if ($data) {
-            $result = $userAPI->createClient($data);
-            echo json_encode($result);
-        } else {
-            echo json_encode(["success" => false, "message" => "Invalid JSON data"]);
+        switch($data->action) {
+            case 'create':
+                $newUser = [
+                    'id' => uniqid(),
+                    'name' => $data->name,
+                    'email' => $data->email,
+                    'username' => $data->username,
+                    'password' => $data->password,
+                    'subdomain' => $data->subdomain,
+                    'plan' => $data->plan,
+                    'storageLimit' => $data->storageLimit,
+                    'status' => 'active',
+                    'accountCreated' => date('Y-m-d'),
+                    'storageUsed' => 0
+                ];
+                
+                $users[] = $newUser;
+                file_put_contents('../../data/users.json', json_encode($users));
+                
+                echo json_encode(["success" => true, "user" => $newUser]);
+                break;
+                
+            case 'get_all':
+                echo json_encode(["success" => true, "users" => $users]);
+                break;
+                
+            case 'update':
+                $userIndex = array_search($data->id, array_column($users, 'id'));
+                if($userIndex !== false) {
+                    if(isset($data->name)) $users[$userIndex]['name'] = $data->name;
+                    if(isset($data->email)) $users[$userIndex]['email'] = $data->email;
+                    if(isset($data->password)) $users[$userIndex]['password'] = $data->password;
+                    if(isset($data->plan)) $users[$userIndex]['plan'] = $data->plan;
+                    if(isset($data->storageLimit)) $users[$userIndex]['storageLimit'] = $data->storageLimit;
+                    if(isset($data->status)) $users[$userIndex]['status'] = $data->status;
+                    
+                    file_put_contents('../../data/users.json', json_encode($users));
+                    echo json_encode(["success" => true, "user" => $users[$userIndex]]);
+                } else {
+                    echo json_encode(["success" => false, "message" => "User not found"]);
+                }
+                break;
+                
+            case 'delete':
+                $users = array_filter($users, function($user) use ($data) {
+                    return $user['id'] != $data->id;
+                });
+                file_put_contents('../../data/users.json', json_encode(array_values($users)));
+                echo json_encode(["success" => true]);
+                break;
         }
-        break;
-        
-    case 'PUT':
-        $data = json_decode(file_get_contents("php://input"));
-        $id = isset($_GET['id']) ? $_GET['id'] : null;
-        
-        if ($id && $data) {
-            $result = $userAPI->updateClient($id, $data);
-            echo json_encode($result);
-        } else {
-            echo json_encode(["success" => false, "message" => "ID and data required"]);
-        }
-        break;
-        
-    case 'DELETE':
-        $id = isset($_GET['id']) ? $_GET['id'] : null;
-        
-        if ($id) {
-            $result = $userAPI->deleteClient($id);
-            echo json_encode($result);
-        } else {
-            echo json_encode(["success" => false, "message" => "ID required"]);
-        }
-        break;
-        
-    default:
-        http_response_code(405);
-        echo json_encode(["success" => false, "message" => "Method not allowed"]);
-        break;
+    }
 }
 ?>
