@@ -1,0 +1,50 @@
+<?php
+header('Content-Type: text/plain');
+
+echo "=== Database Connection Test ===\n\n";
+
+try {
+    include_once 'database.php';
+    $database = new Database();
+    $db = $database->getConnection();
+    
+    if ($db) {
+        echo "✅ SUCCESS: Database connected!\n";
+        echo "Database: " . $database->db_name . "\n";
+        echo "Username: " . $database->username . "\n\n";
+        
+        // Test if tables exist
+        $tables = ['users', 'files', 'database_backups'];
+        foreach ($tables as $table) {
+            $stmt = $db->query("SHOW TABLES LIKE '$table'");
+            if ($stmt->rowCount() > 0) {
+                echo "✅ Table '$table' exists\n";
+                
+                // Count rows in users table
+                if ($table === 'users') {
+                    $countStmt = $db->query("SELECT COUNT(*) as count FROM users");
+                    $count = $countStmt->fetch(PDO::FETCH_ASSOC)['count'];
+                    echo "   📊 Total users: $count\n";
+                    
+                    // Show admin user
+                    $adminStmt = $db->query("SELECT username, name, role FROM users WHERE username = 'admin'");
+                    if ($adminStmt->rowCount() > 0) {
+                        $admin = $adminStmt->fetch(PDO::FETCH_ASSOC);
+                        echo "   👤 Admin user: {$admin['name']} ({$admin['username']})\n";
+                    }
+                }
+            } else {
+                echo "❌ Table '$table' missing\n";
+            }
+        }
+        
+    } else {
+        echo "❌ FAILED: Database connection failed\n";
+    }
+} catch (Exception $e) {
+    echo "❌ ERROR: " . $e->getMessage() . "\n";
+    echo "Check your database credentials in database.php\n";
+}
+
+echo "\n=== Test Complete ===\n";
+?>
