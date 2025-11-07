@@ -1,7 +1,6 @@
 // Admin-specific JavaScript
 class AdminApp {
     constructor() {
-        this.dataManager = new DataManager();
         this.currentAdmin = null;
         this.init();
     }
@@ -40,24 +39,38 @@ class AdminApp {
         }
     }
 
-    handleAdminLogin() {
+    async handleAdminLogin() {
         const username = document.getElementById('adminUsername').value;
         const password = document.getElementById('adminPassword').value;
         const errorDiv = document.getElementById('adminLoginError');
 
-        // Check admin credentials
-        if (username === 'admin' && password === 'admin123') {
-            this.currentAdmin = {
-                id: 'admin',
-                name: 'System Administrator',
-                username: 'admin',
-                role: 'admin'
-            };
-            
-            localStorage.setItem('adminUser', JSON.stringify(this.currentAdmin));
-            this.showDashboard();
-        } else {
+        try {
+            const response = await fetch('api/auth.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'login',
+                    username: username,
+                    password: password
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.user.role === 'admin') {
+                this.currentAdmin = result.user;
+                localStorage.setItem('adminUser', JSON.stringify(result.user));
+                this.showDashboard();
+            } else {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = result.message || 'Invalid credentials';
+            }
+        } catch (error) {
+            console.error('Login error:', error);
             errorDiv.style.display = 'block';
+            errorDiv.textContent = 'Network error. Please try again.';
         }
     }
 
@@ -128,13 +141,49 @@ class AdminApp {
         });
     }
 
-    loadClients(searchTerm = '') {
-        const clients = this.dataManager.getUsers().filter(user => user.role !== 'admin');
+    async loadClients(searchTerm = '') {
+        try {
+            const response = await fetch('api/users.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'get_all'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.displayClients(result.users, searchTerm);
+            }
+        } catch (error) {
+            console.error('Error loading clients:', error);
+            // Fallback to localStorage if API fails
+            this.loadClientsFromLocalStorage(searchTerm);
+        }
+    }
+
+    loadClientsFromLocalStorage(searchTerm = '') {
+        const dataManager = new DataManager();
+        const clients = dataManager.getUsers().filter(user => user.role !== 'admin');
         const filteredClients = clients.filter(client => 
             client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             client.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
             client.subdomain.toLowerCase().includes(searchTerm.toLowerCase())
         );
+        
+        this.displayClients(filteredClients);
+    }
+
+    displayClients(clients, searchTerm = '') {
+        const filteredClients = searchTerm ? 
+            clients.filter(client => 
+                client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                client.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                client.subdomain.toLowerCase().includes(searchTerm.toLowerCase())
+            ) : clients;
         
         const clientsTable = document.getElementById('clientsTable');
         clientsTable.innerHTML = '';
@@ -177,8 +226,33 @@ class AdminApp {
         });
     }
 
-    updateStats() {
-        const clients = this.dataManager.getUsers().filter(user => user.role !== 'admin');
+    async updateStats() {
+        try {
+            const response = await fetch('api/users.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'get_all'
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.calculateStats(result.users);
+            }
+        } catch (error) {
+            console.error('Error loading stats:', error);
+            // Fallback to localStorage
+            const dataManager = new DataManager();
+            const clients = dataManager.getUsers().filter(user => user.role !== 'admin');
+            this.calculateStats(clients);
+        }
+    }
+
+    calculateStats(clients) {
         const activeClients = clients.filter(client => client.status === 'active');
         
         // Calculate total files and storage
@@ -186,7 +260,8 @@ class AdminApp {
         let totalStorage = 0;
         
         clients.forEach(client => {
-            const clientFiles = this.dataManager.getClientFiles(client.id);
+            const dataManager = new DataManager();
+            const clientFiles = dataManager.getClientFiles(client.id);
             totalFiles += clientFiles.length;
             totalStorage += client.storageUsed || 0;
         });
@@ -197,7 +272,7 @@ class AdminApp {
         document.getElementById('totalStorage').textContent = totalStorage.toFixed(2);
     }
 
-    handleCreateAccount() {
+    async handleCreateAccount() {
         const clientName = document.getElementById('clientName').value;
         const clientEmail = document.getElementById('clientEmail').value;
         const username = document.getElementById('username').value;
@@ -206,42 +281,95 @@ class AdminApp {
         const plan = document.getElementById('plan').value;
         const storageLimit = parseInt(document.getElementById('storageLimit').value);
         
-        // Validate subdomain uniqueness
-        if (!this.dataManager.validateSubdomain(subdomain)) {
-            alert('Subdomain already exists. Please choose a different one.');
-            return;
-        }
-        
-        // Check if username already exists
-        if (this.dataManager.getUserByUsername(username)) {
-            alert('Username already exists. Please choose a different one.');
-            return;
-        }
-        
-        const newUser = this.dataManager.createUser({
-            name: clientName,
-            email: clientEmail,
-            username: username,
-            password: password,
-            subdomain: subdomain,
-            plan: plan,
-            storageLimit: storageLimit,
-            role: 'client'
-        });
-        
-        if (newUser) {
-            alert('Client account created successfully!');
-            document.getElementById('createAccountForm').reset();
-            this.loadClients();
-            this.updateStats();
-        } else {
-            alert('Error creating client account.');
+        try {
+            const response = await fetch('api/users.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'create',
+                    name: clientName,
+                    email: clientEmail,
+                    username: username,
+                    password: password,
+                    subdomain: subdomain,
+                    plan: plan,
+                    storageLimit: storageLimit
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Client account created successfully!');
+                document.getElementById('createAccountForm').reset();
+                this.loadClients();
+                this.updateStats();
+                
+                // Also create in localStorage for fallback
+                const dataManager = new DataManager();
+                dataManager.createUser({
+                    name: clientName,
+                    email: clientEmail,
+                    username: username,
+                    password: password,
+                    subdomain: subdomain,
+                    plan: plan,
+                    storageLimit: storageLimit,
+                    role: 'client'
+                });
+            } else {
+                alert(result.message || 'Error creating client account.');
+            }
+        } catch (error) {
+            console.error('Create account error:', error);
+            // Fallback to localStorage
+            const dataManager = new DataManager();
+            
+            // Validate subdomain uniqueness
+            if (!dataManager.validateSubdomain(subdomain)) {
+                alert('Subdomain already exists. Please choose a different one.');
+                return;
+            }
+            
+            // Check if username already exists
+            if (dataManager.getUserByUsername(username)) {
+                alert('Username already exists. Please choose a different one.');
+                return;
+            }
+            
+            const newUser = dataManager.createUser({
+                name: clientName,
+                email: clientEmail,
+                username: username,
+                password: password,
+                subdomain: subdomain,
+                plan: plan,
+                storageLimit: storageLimit,
+                role: 'client'
+            });
+            
+            if (newUser) {
+                alert('Client account created successfully! (Local storage)');
+                document.getElementById('createAccountForm').reset();
+                this.loadClients();
+                this.updateStats();
+            } else {
+                alert('Error creating client account.');
+            }
         }
     }
 
     editClient(clientId) {
-        const client = this.dataManager.getUserById(clientId);
-        if (!client) return;
+        // Try to get client from API first, then fallback to localStorage
+        const dataManager = new DataManager();
+        const client = dataManager.getUserById(clientId);
+        
+        if (!client) {
+            alert('Client not found');
+            return;
+        }
         
         document.getElementById('editClientId').value = clientId;
         document.getElementById('editClientName').value = client.name;
@@ -266,7 +394,7 @@ class AdminApp {
         };
     }
 
-    saveClientChanges(clientId) {
+    async saveClientChanges(clientId) {
         const updates = {
             name: document.getElementById('editClientName').value,
             email: document.getElementById('editClientEmail').value,
@@ -280,33 +408,97 @@ class AdminApp {
             updates.password = newPassword;
         }
         
-        const success = this.dataManager.updateUser(clientId, updates);
-        
-        if (success) {
-            alert('Client account updated successfully!');
-            document.getElementById('editClientModal').style.display = 'none';
-            this.loadClients();
-            this.updateStats();
-        } else {
-            alert('Error updating client account.');
+        try {
+            const response = await fetch('api/users.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'update',
+                    id: clientId,
+                    ...updates
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Client account updated successfully!');
+                document.getElementById('editClientModal').style.display = 'none';
+                this.loadClients();
+                this.updateStats();
+                
+                // Also update in localStorage
+                const dataManager = new DataManager();
+                dataManager.updateUser(clientId, updates);
+            } else {
+                alert(result.message || 'Error updating client account.');
+            }
+        } catch (error) {
+            console.error('Update error:', error);
+            // Fallback to localStorage
+            const dataManager = new DataManager();
+            const success = dataManager.updateUser(clientId, updates);
+            
+            if (success) {
+                alert('Client account updated successfully! (Local storage)');
+                document.getElementById('editClientModal').style.display = 'none';
+                this.loadClients();
+                this.updateStats();
+            } else {
+                alert('Error updating client account.');
+            }
         }
     }
 
-    deleteClient(clientId) {
-        const users = this.dataManager.deleteUser(clientId);
-        
-        if (users) {
-            alert('Client account deleted successfully!');
-            document.getElementById('editClientModal').style.display = 'none';
-            this.loadClients();
-            this.updateStats();
-        } else {
-            alert('Error deleting client account.');
+    async deleteClient(clientId) {
+        try {
+            const response = await fetch('api/users.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'delete',
+                    id: clientId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Client account deleted successfully!');
+                document.getElementById('editClientModal').style.display = 'none';
+                this.loadClients();
+                this.updateStats();
+                
+                // Also delete from localStorage
+                const dataManager = new DataManager();
+                dataManager.deleteUser(clientId);
+            } else {
+                alert(result.message || 'Error deleting client account.');
+            }
+        } catch (error) {
+            console.error('Delete error:', error);
+            // Fallback to localStorage
+            const dataManager = new DataManager();
+            const users = dataManager.deleteUser(clientId);
+            
+            if (users) {
+                alert('Client account deleted successfully! (Local storage)');
+                document.getElementById('editClientModal').style.display = 'none';
+                this.loadClients();
+                this.updateStats();
+            } else {
+                alert('Error deleting client account.');
+            }
         }
     }
 
     exportData() {
-        const data = this.dataManager.exportData();
+        const dataManager = new DataManager();
+        const data = dataManager.exportData();
         const blob = new Blob([data], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
