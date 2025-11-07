@@ -4,12 +4,18 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 include_once '../config/database.php';
 
 class FileAPI {
     private $db;
     private $table_name = "files";
-    private $upload_dir = "../uploads/";
+    private $upload_dir = "../../uploads/";
 
     public function __construct() {
         $database = new Database();
@@ -17,7 +23,7 @@ class FileAPI {
         
         // Create uploads directory if it doesn't exist
         if (!file_exists($this->upload_dir)) {
-            mkdir($this->upload_dir, 0777, true);
+            mkdir($this->upload_dir, 0755, true);
         }
     }
 
@@ -59,7 +65,7 @@ class FileAPI {
         // Create user's upload directory
         $user_upload_dir = $this->upload_dir . $user_id . "/";
         if (!file_exists($user_upload_dir)) {
-            mkdir($user_upload_dir, 0777, true);
+            mkdir($user_upload_dir, 0755, true);
         }
         
         $filename = uniqid() . "_" . basename($_FILES['file']['name']);
@@ -135,34 +141,6 @@ class FileAPI {
             return ["success" => false, "message" => "Failed to delete file"];
         }
     }
-
-    // Download file
-    public function downloadFile($file_id, $user_id) {
-        $query = "SELECT * FROM files WHERE id = :file_id AND user_id = :user_id";
-        $stmt = $this->db->prepare($query);
-        $stmt->bindParam(":file_id", $file_id);
-        $stmt->bindParam(":user_id", $user_id);
-        $stmt->execute();
-        
-        if ($stmt->rowCount() == 1) {
-            $file = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (file_exists($file['file_path'])) {
-                header('Content-Description: File Transfer');
-                header('Content-Type: application/octet-stream');
-                header('Content-Disposition: attachment; filename="' . $file['original_name'] . '"');
-                header('Expires: 0');
-                header('Cache-Control: must-revalidate');
-                header('Pragma: public');
-                header('Content-Length: ' . filesize($file['file_path']));
-                readfile($file['file_path']);
-                exit;
-            }
-        }
-        
-        http_response_code(404);
-        echo "File not found";
-    }
 }
 
 // Handle requests
@@ -174,11 +152,11 @@ $file_id = isset($_GET['file_id']) ? $_GET['file_id'] : null;
 
 switch ($method) {
     case 'GET':
-        if ($file_id && $user_id) {
-            $fileAPI->downloadFile($file_id, $user_id);
-        } else if ($user_id) {
+        if ($user_id) {
             $files = $fileAPI->getUserFiles($user_id);
             echo json_encode(["success" => true, "files" => $files]);
+        } else {
+            echo json_encode(["success" => false, "message" => "User ID required"]);
         }
         break;
         
@@ -186,6 +164,8 @@ switch ($method) {
         if ($user_id && isset($_FILES['file'])) {
             $result = $fileAPI->uploadFile($user_id);
             echo json_encode($result);
+        } else {
+            echo json_encode(["success" => false, "message" => "User ID and file required"]);
         }
         break;
         
@@ -193,7 +173,14 @@ switch ($method) {
         if ($file_id && $user_id) {
             $result = $fileAPI->deleteFile($file_id, $user_id);
             echo json_encode($result);
+        } else {
+            echo json_encode(["success" => false, "message" => "File ID and User ID required"]);
         }
+        break;
+        
+    default:
+        http_response_code(405);
+        echo json_encode(["success" => false, "message" => "Method not allowed"]);
         break;
 }
 ?>

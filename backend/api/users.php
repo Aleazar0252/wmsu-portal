@@ -4,6 +4,12 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 
+// Handle preflight OPTIONS request
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    http_response_code(200);
+    exit();
+}
+
 include_once '../config/database.php';
 
 class UserAPI {
@@ -19,7 +25,8 @@ class UserAPI {
     public function getClients() {
         $query = "SELECT id, username, name, email, subdomain, plan, 
                          storage_limit_mb, storage_used_mb, status, 
-                         account_created, last_login 
+                         DATE_FORMAT(account_created, '%Y-%m-%d') as account_created, 
+                         last_login 
                   FROM users WHERE role = 'client' ORDER BY account_created DESC";
         
         $stmt = $this->db->prepare($query);
@@ -97,16 +104,11 @@ class UserAPI {
 
     // Delete client
     public function deleteClient($id) {
-        // First delete client's files and backups
+        // First delete client's files
         $deleteFiles = "DELETE FROM files WHERE user_id = :user_id";
         $stmt1 = $this->db->prepare($deleteFiles);
         $stmt1->bindParam(":user_id", $id);
         $stmt1->execute();
-        
-        $deleteBackups = "DELETE FROM database_backups WHERE user_id = :user_id";
-        $stmt2 = $this->db->prepare($deleteBackups);
-        $stmt2->bindParam(":user_id", $id);
-        $stmt2->execute();
         
         // Then delete user
         $query = "DELETE FROM users WHERE id = :id";
@@ -133,23 +135,40 @@ switch ($method) {
         
     case 'POST':
         $data = json_decode(file_get_contents("php://input"));
-        $result = $userAPI->createClient($data);
-        echo json_encode($result);
+        if ($data) {
+            $result = $userAPI->createClient($data);
+            echo json_encode($result);
+        } else {
+            echo json_encode(["success" => false, "message" => "Invalid JSON data"]);
+        }
         break;
         
     case 'PUT':
-        parse_str(file_get_contents("php://input"), $put_vars);
-        $data = json_decode($put_vars['data']);
-        $id = $put_vars['id'];
-        $result = $userAPI->updateClient($id, $data);
-        echo json_encode($result);
+        $data = json_decode(file_get_contents("php://input"));
+        $id = isset($_GET['id']) ? $_GET['id'] : null;
+        
+        if ($id && $data) {
+            $result = $userAPI->updateClient($id, $data);
+            echo json_encode($result);
+        } else {
+            echo json_encode(["success" => false, "message" => "ID and data required"]);
+        }
         break;
         
     case 'DELETE':
-        parse_str(file_get_contents("php://input"), $delete_vars);
-        $id = $delete_vars['id'];
-        $result = $userAPI->deleteClient($id);
-        echo json_encode($result);
+        $id = isset($_GET['id']) ? $_GET['id'] : null;
+        
+        if ($id) {
+            $result = $userAPI->deleteClient($id);
+            echo json_encode($result);
+        } else {
+            echo json_encode(["success" => false, "message" => "ID required"]);
+        }
+        break;
+        
+    default:
+        http_response_code(405);
+        echo json_encode(["success" => false, "message" => "Method not allowed"]);
         break;
 }
 ?>
