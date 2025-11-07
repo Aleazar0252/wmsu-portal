@@ -1,20 +1,19 @@
+# In your public_html/.htaccess
 RewriteEngine On
 
-# Auto-serve admin/index.html for /admin URL
-RewriteRule ^admin/?$ admin/index.html [L]
-
-# Allow access to admin directory contents
-RewriteRule ^admin/ - [L]
-
 # Allow access to backend APIs
-RewriteRule ^backend/api/ - [L]
+<Files "*.php">
+    Require all granted
+</Files>
 
-# Protect config files
+# Protect sensitive files
 <Files "database.php">
     Deny from all
 </Files>
 
-# Allow all other files
-<Files "*">
+# Set upload directory permissions
+<Directory "/backend/uploads">
+    Allow from all
+    AllowOverride All
     Require all granted
-</Files
+</Directory>
