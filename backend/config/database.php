@@ -1,9 +1,9 @@
 <?php
 class Database {
     private $host = "srv1981.hstgr.io";
-    private $db_name = "u926749960_portal_db"; 
-    private $username = "u926749960_wmsuportal"; 
-    private $password = "Wmsuportal_2025"; 
+    private $db_name = "u926749960_portal_db";
+    private $username = "u926749960_wmsuportal";
+    private $password = "Wmsu_portal2025"; // Add your password
     public $conn;
 
     public function getConnection() {

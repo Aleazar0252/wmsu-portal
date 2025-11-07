@@ -3,85 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WMSU Research Portal</title>
+    <title>Client Portal - WMSU Research</title>
     <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <header class="main-header">
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">
-                    <i class="fas fa-flask"></i>
-                    <h1>WMSU Research Portal</h1>
-                </div>
-                <nav class="main-nav">
-                    <a href="#" id="loginLink">Client Login</a>
-                    <a href="admin.html" class="btn btn-outline">Admin Portal</a>
-                </nav>
+    <div class="container">
+        <header>
+            <h1>Client Portal</h1>
+            <div id="userInfo">
+                <span id="username"></span>
+                <button onclick="logout()">Logout</button>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <main class="main-content">
-        <div class="container">
-            <!-- Login Modal -->
-            <div class="modal" id="loginModal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Client Login</h3>
-                        <button class="btn-icon close-modal">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="login-error" id="loginError" style="display: none;"></div>
-                        <form id="clientLoginForm">
-                            <div class="form-group">
-                                <label for="username">Username</label>
-                                <input type="text" id="username" class="form-control" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="password">Password</label>
-                                <input type="password" id="password" class="form-control" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Login</button>
-                        </form>
-                    </div>
-                </div>
+        <div id="loginSection" class="section">
+            <h2>Client Login</h2>
+            <form id="loginForm">
+                <input type="text" id="clientUsername" placeholder="Username" required>
+                <input type="password" id="clientPassword" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <div id="clientSection" class="section hidden">
+            <div class="tabs">
+                <button class="tab-button active" onclick="openTab('fileManagement')">File Management</button>
+                <button class="tab-button" onclick="openTab('databaseManagement')">Database Management</button>
             </div>
 
-            <!-- Hero Section -->
-            <section class="hero">
-                <div class="hero-content">
-                    <h2>Welcome to WMSU Research Management System</h2>
-                    <p>Manage your research projects, collaborate with team members, and store your research data securely.</p>
-                    <div class="hero-features">
-                        <div class="feature">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <h4>Secure File Storage</h4>
-                            <p>Upload and manage your research files with enterprise-grade security</p>
-                        </div>
-                        <div class="feature">
-                            <i class="fas fa-users"></i>
-                            <h4>Team Collaboration</h4>
-                            <p>Work together with your research team in a centralized platform</p>
-                        </div>
-                        <div class="feature">
-                            <i class="fas fa-chart-line"></i>
-                            <h4>Progress Tracking</h4>
-                            <p>Monitor your research progress and milestones</p>
-                        </div>
-                    </div>
+            <div id="fileManagement" class="tab-content active">
+                <h3>File Upload</h3>
+                <form id="uploadForm">
+                    <input type="file" id="fileInput" multiple>
+                    <button type="submit">Upload Files</button>
+                </form>
+                
+                <h3>Uploaded Files</h3>
+                <div id="fileList"></div>
+            </div>
+
+            <div id="databaseManagement" class="tab-content">
+                <h3>Database Operations</h3>
+                <div class="db-actions">
+                    <button onclick="backupDatabase()">Backup Database</button>
+                    <button onclick="showTables()">Show Tables</button>
                 </div>
-            </section>
+                <div id="dbResults"></div>
+                <div id="backupList"></div>
+            </div>
         </div>
-    </main>
+    </div>
 
-    <footer class="main-footer">
-        <div class="container">
-            <p>&copy; 2024 WMSU Research Portal. All rights reserved.</p>
-        </div>
-    </footer>
-
+    <script src="data.js"></script>
     <script src="client.js"></script>
 </body>
 </html>

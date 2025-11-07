@@ -1,169 +1,130 @@
-// Data storage and utilities
-class DataManager {
+const API_BASE = '/api';
+
+class ApiClient {
     constructor() {
-        this.usersKey = 'wmsu_clients';
-        this.filesKey = 'wmsu_client_files';
-        this.init();
+        this.token = localStorage.getItem('authToken');
     }
 
-    init() {
-        // Initialize default admin if not exists
-        if (!this.getUsers().some(user => user.username === 'admin')) {
-            const defaultUsers = [
-                {
-                    id: this.generateId(),
-                    username: 'admin',
-                    password: 'admin123',
-                    name: 'System Administrator',
-                    email: 'admin@wmsu-research.com',
-                    role: 'admin',
-                    subdomain: 'admin',
-                    plan: 'admin',
-                    storageLimit: 0,
-                    status: 'active',
-                    accountCreated: new Date().toISOString().split('T')[0]
-                }
-            ];
-            localStorage.setItem(this.usersKey, JSON.stringify(defaultUsers));
-        }
-    }
-
-    // User management
-    getUsers() {
-        return JSON.parse(localStorage.getItem(this.usersKey)) || [];
-    }
-
-    saveUsers(users) {
-        localStorage.setItem(this.usersKey, JSON.stringify(users));
-    }
-
-    getUserByUsername(username) {
-        return this.getUsers().find(user => user.username === username);
-    }
-
-    getUserById(id) {
-        return this.getUsers().find(user => user.id === id);
-    }
-
-    createUser(userData) {
-        const users = this.getUsers();
-        const newUser = {
-            id: this.generateId(),
-            ...userData,
-            status: 'active',
-            accountCreated: new Date().toISOString().split('T')[0],
-            files: [],
-            storageUsed: 0
+    async request(endpoint, options = {}) {
+        const url = `${API_BASE}${endpoint}`;
+        const config = {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
         };
-        
-        users.push(newUser);
-        this.saveUsers(users);
-        return newUser;
-    }
 
-    updateUser(userId, updates) {
-        const users = this.getUsers();
-        const userIndex = users.findIndex(user => user.id === userId);
-        
-        if (userIndex !== -1) {
-            users[userIndex] = { ...users[userIndex], ...updates };
-            this.saveUsers(users);
-            return users[userIndex];
+        if (this.token) {
+            config.headers['Authorization'] = `Bearer ${this.token}`;
         }
-        return null;
-    }
 
-    deleteUser(userId) {
-        const users = this.getUsers();
-        const filteredUsers = users.filter(user => user.id !== userId);
-        this.saveUsers(filteredUsers);
-        return filteredUsers;
-    }
-
-    // File management
-    getClientFiles(clientId) {
-        const allFiles = JSON.parse(localStorage.getItem(this.filesKey)) || {};
-        return allFiles[clientId] || [];
-    }
-
-    saveClientFiles(clientId, files) {
-        const allFiles = JSON.parse(localStorage.getItem(this.filesKey)) || {};
-        allFiles[clientId] = files;
-        localStorage.setItem(this.filesKey, JSON.stringify(allFiles));
-    }
-
-    addClientFile(clientId, file) {
-        const files = this.getClientFiles(clientId);
-        const newFile = {
-            id: this.generateId(),
-            name: file.name,
-            size: file.size,
-            type: file.type,
-            uploadDate: new Date().toISOString().split('T')[0],
-            clientId: clientId
-        };
-        files.push(newFile);
-        this.saveClientFiles(clientId, files);
-        
-        // Update storage used
-        const user = this.getUserById(clientId);
-        if (user) {
-            user.storageUsed = (user.storageUsed || 0) + (file.size / (1024 * 1024)); // Convert to MB
-            this.updateUser(clientId, { storageUsed: user.storageUsed });
-        }
-        
-        return newFile;
-    }
-
-    deleteClientFile(clientId, fileId) {
-        const files = this.getClientFiles(clientId);
-        const fileIndex = files.findIndex(file => file.id === fileId);
-        
-        if (fileIndex !== -1) {
-            const file = files[fileIndex];
-            files.splice(fileIndex, 1);
-            this.saveClientFiles(clientId, files);
-            
-            // Update storage used
-            const user = this.getUserById(clientId);
-            if (user) {
-                user.storageUsed = Math.max(0, (user.storageUsed || 0) - (file.size / (1024 * 1024)));
-                this.updateUser(clientId, { storageUsed: user.storageUsed });
-            }
-        }
-    }
-
-    // Utility methods
-    generateId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2);
-    }
-
-    validateSubdomain(subdomain) {
-        const users = this.getUsers();
-        return !users.some(user => user.subdomain === subdomain && user.role !== 'admin');
-    }
-
-    exportData() {
-        const data = {
-            users: this.getUsers(),
-            files: JSON.parse(localStorage.getItem(this.filesKey)) || {},
-            exportDate: new Date().toISOString()
-        };
-        return JSON.stringify(data, null, 2);
-    }
-
-    importData(jsonData) {
         try {
-            const data = JSON.parse(jsonData);
-            if (data.users) this.saveUsers(data.users);
-            if (data.files) localStorage.setItem(this.filesKey, JSON.stringify(data.files));
-            return true;
+            const response = await fetch(url, config);
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Request failed');
+            }
+            
+            return data;
         } catch (error) {
-            console.error('Error importing data:', error);
-            return false;
+            console.error('API request failed:', error);
+            throw error;
         }
+    }
+
+    setToken(token) {
+        this.token = token;
+        localStorage.setItem('authToken', token);
+    }
+
+    clearToken() {
+        this.token = null;
+        localStorage.removeItem('authToken');
+    }
+
+    // Auth endpoints
+    async clientLogin(username, password) {
+        return this.request('/auth.php', {
+            method: 'POST',
+            body: JSON.stringify({ username, password, type: 'client' })
+        });
+    }
+
+    async adminLogin(username, password) {
+        return this.request('/auth.php', {
+            method: 'POST',
+            body: JSON.stringify({ username, password, type: 'admin' })
+        });
+    }
+
+    async logout() {
+        return this.request('/auth.php', {
+            method: 'DELETE'
+        });
+    }
+
+    // File endpoints
+    async uploadFiles(formData) {
+        const response = await fetch(`${API_BASE}/files.php`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${this.token}`
+            },
+            body: formData
+        });
+        return await response.json();
+    }
+
+    async getFiles() {
+        return this.request('/files.php');
+    }
+
+    async deleteFile(filename) {
+        return this.request('/files.php', {
+            method: 'DELETE',
+            body: JSON.stringify({ filename })
+        });
+    }
+
+    // User management endpoints
+    async createClient(userData) {
+        return this.request('/users.php', {
+            method: 'POST',
+            body: JSON.stringify(userData)
+        });
+    }
+
+    async getClients() {
+        return this.request('/users.php');
+    }
+
+    async deleteClient(userId) {
+        return this.request('/users.php', {
+            method: 'DELETE',
+            body: JSON.stringify({ user_id: userId })
+        });
+    }
+
+    // Database endpoints
+    async backupDatabase() {
+        return this.request('/backups.php', {
+            method: 'POST'
+        });
+    }
+
+    async getBackups() {
+        return this.request('/backups.php');
+    }
+
+    async showTables() {
+        return this.request('/backups.php?action=tables');
+    }
+
+    async downloadBackup(filename) {
+        window.open(`${API_BASE}/backups.php?download=${filename}`);
     }
 }
 
-// Initialize data manager
-const dataManager = new DataManager();
+const apiClient = new ApiClient();
