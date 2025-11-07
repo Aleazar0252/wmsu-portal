@@ -1,0 +1,23 @@
+# Allow access to admin directory
+Require all granted
+
+# Allow PHP files to execute
+<Files "*.php">
+    Require all granted
+</Files>
+
+# Allow HTML files
+<Files "*.html">
+    Require all granted
+</Files>
+
+# Allow CSS and JS files
+<Files "*.css">
+    Require all granted
+</Files>
+<Files "*.js">
+    Require all granted
+</Files>
+
+# Enable directory browsing for admin (optional)
+Options +Indexes

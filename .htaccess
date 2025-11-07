@@ -1,0 +1,17 @@
+RewriteEngine On
+
+# Allow access to admin directory
+RewriteRule ^admin/ - [L]
+
+# Allow access to backend APIs
+RewriteRule ^backend/api/ - [L]
+
+# Protect config files
+<Files "database.php">
+    Deny from all
+</Files>
+
+# Allow all other files
+<Files "*">
+    Require all granted
+</Files>
