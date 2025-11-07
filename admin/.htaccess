@@ -1,18 +1,4 @@
-# Admin Directory Configuration
-Options +Indexes
-
-# Set index.html as the default file
+# Auto-open index.html when accessing /admin/
 DirectoryIndex index.html
-
-# Allow access to all files in admin directory
+Options -Indexes
 Require all granted
-
-# Allow all file types
-<Files "*">
-    Require all granted
-</Files>
-
-# Security: Protect sensitive files (optional)
-<Files "*.php">
-    Require all granted
-</Files>

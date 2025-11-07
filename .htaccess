@@ -1,6 +1,9 @@
 RewriteEngine On
 
-# Allow access to admin directory
+# Auto-serve admin/index.html for /admin URL
+RewriteRule ^admin/?$ admin/index.html [L]
+
+# Allow access to admin directory contents
 RewriteRule ^admin/ - [L]
 
 # Allow access to backend APIs
@@ -14,4 +17,4 @@ RewriteRule ^backend/api/ - [L]
 # Allow all other files
 <Files "*">
     Require all granted
-</Files>
+</Files
