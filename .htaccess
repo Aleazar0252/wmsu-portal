@@ -1,19 +1,15 @@
-# In your public_html/.htaccess
 RewriteEngine On
 
-# Allow access to backend APIs
+# Allow API access
+RewriteRule ^backend/api/ - [L]
+
+# Protect config files
 <Files "*.php">
-    Require all granted
+    Order Allow,Deny
+    Allow from all
 </Files>
 
-# Protect sensitive files
 <Files "database.php">
+    Order Deny,Allow
     Deny from all
 </Files>
-
-# Set upload directory permissions
-<Directory "/backend/uploads">
-    Allow from all
-    AllowOverride All
-    Require all granted
-</Directory>
